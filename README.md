@@ -1,0 +1,2 @@
+# sam
+Splunk App Manager
