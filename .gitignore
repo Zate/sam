@@ -19,3 +19,4 @@ sam
 sbase/apps/*
 sbase/.env*
 sbase/data/*
+sbase/*.tar.gz

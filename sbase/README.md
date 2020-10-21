@@ -16,6 +16,7 @@ Pray it's not broken.
 
 - Needs docker and docker-compose
 - Needs a username for splunkbase
+- Needs jq for processing JSON
 - Might need your username to have the API turned on via <https://dev.splunk.com/enterprise/docs/releaseapps/splunkbase/submitcontentrestapi>
 
 ## To Do
