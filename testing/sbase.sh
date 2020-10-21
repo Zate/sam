@@ -13,6 +13,11 @@ curl --write-out '%{http_code}' --silent --output /dev/null -k -u admin:stuff123
 APPID=`curl -sS -k https://splunkbase.splunk.com/api/v1/app/${1}/ | jq -r .appid`
 # Going to put in a couple of quick things here to export it as a spl and copy it out, unsure if that format will be useful later or not.
 #curl -sS -k -u admin:stuff123 https://localhost:8089/services/apps/local/${APPID}/package?output_mode=json | jq -r .
+# https://download.splunk.com/misc/appinspect/splunk-appinspect-latest.tar.gz
+# https://download.splunk.com/misc/packaging-toolkit/splunk-packaging-toolkit-1.0.1.tar.gz
+
+
+
 docker cp sbase_so1_1:/opt/splunk/etc/apps/${APPID} ${APPID}
 tar -zcf ${APPID}.tar.gz ${APPID}
 sudo rm -rf ${APPID}
