@@ -9,8 +9,9 @@ Throw into that the desire to adopt more devops processes with testing of apps i
 I'm looking to build a way of building a CICD pipeline that does the following:
 
 - [ ] Allows for an app and an addon to be linked if they are distinctly related.
-- [ ] Builds App Inspector into the CICD pipeline to fail builds/deployments for apps that do not pass.
+- [ ] Builds App Inspect into the CICD pipeline to fail builds/deployments for apps that do not pass. - <https://dev.splunk.com/enterprise/docs/developapps/testvalidate/appinspect>
 - [ ] Repackages apps for specific server functions to ensure each server only gets the pieces of the app/addon combination it needs
+- [ ] <https://dev.splunk.com/enterprise/docs/releaseapps/packagingtoolkit> might be a good tool to use to package things for specific types of server deployments.
 - [ ] Tracks installed apps and will show when updates are available on the source (Splunkbase, gitlab, github, s3 etc)
 - [ ] Push button download, repackage, testing and deployment of apps.
 
