@@ -49,7 +49,7 @@ TBD
 ```json
 {
 "uid": 2890,
-"appid": "Splunk_ML_Toolkit",
+"appid": "Splunk_ML_Toolkit", <-- this is the folder name for us to look for after its downloaded.>
 "title": "Splunk Machine Learning Toolkit",
 "created_time": "2015-09-15T15:40:42+00:00",
 "published_time": "2015-09-15T15:40:42+00:00",
