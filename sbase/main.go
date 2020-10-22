@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
@@ -46,6 +47,30 @@ type Server struct {
 	name string
 	port string
 	// tls bool
+}
+
+// App is a json struct containing all the info about an app.
+type App struct {
+	UID                      int    `json:"uid"`
+	Appid                    string `json:"appid"`
+	Title                    string `json:"title"`
+	CreatedTime              string `json:"created_time"`
+	PublishedTime            string `json:"published_time"`
+	UpdatedTime              string `json:"updated_time"`
+	LicenseName              string `json:"license_name"`
+	AppType                  string `json:"type"`
+	LicenseURL               string `json:"license_url"`
+	Description              string `json:"description"`
+	Access                   string `json:"access"`
+	AppInspectPassed         bool   `json:"appinspect_passed"`
+	Path                     string `json:"path"`
+	InstallMethodDistributed string `json:"install_method_distributed"`
+	InstallMethodSingle      string `json:"install_method_single"`
+	DownloadCount            int    `json:"download_count"`
+	InstallCount             int    `json:"install_count"`
+	ArchiveStatus            string `json:"archive_status"`
+	IsArchived               bool   `json:"is_archived"`
+	FedrampValidation        string `json:"fedramp_validation"`
 }
 
 // LoadCreds grabs username and password from SB_USER and SB_PASSWD env vars
@@ -155,6 +180,41 @@ func AuthToken(cr *Creds) string {
 
 }
 
+// GetURL returns Body from Splunkbase API request.
+func GetURL(u string) (body []byte) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+	client := &http.Client{Transport: tr}
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//log.Println(string(body))
+
+	return body
+}
+
+// GetAppInfo takes an appid and calls Splunkbase API to get info about the app.
+func GetAppInfo(a string) (app *App) {
+	app = new(App)
+	u := "https://splunkbase.splunk.com/api/v1/app/" + a + "/"
+	b := GetURL(u)
+	err := json.Unmarshal(b, &app)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return app
+}
+
 func init() {
 	// loads values from .env into the system
 	if err := godotenv.Load(); err != nil {
@@ -178,5 +238,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
+	// Get a list of all Splunkbase apps.  Maybe we cache this locally to browse through at some stage?
+	// Get AppInfo based on Appid
+	z := GetAppInfo("2890")
+	log.Println(z.Appid)
 }

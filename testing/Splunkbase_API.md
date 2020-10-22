@@ -2,8 +2,19 @@
 
 <https://splunkbase.splunk.com/api/v1/app/?include=all>
 
-```json
-TBD
+```text
+inclue=all
+include=utilities,security_compliance <-- Can put in different value for the categories>
+Other values : business_analytics, internet_of_things
+
+offset=<number>
+limit=<number>
+
+Can use those two to iterate through pages of items
+
+---
+type=addon | app <-- kind of wish they would categorize alerts as their own type.
+>
 ```
 
 <https://splunkbase.splunk.com/api/v1/app/2890/release/>
