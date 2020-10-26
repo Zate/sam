@@ -1,5 +1,9 @@
 # sam - Splunk App Manager
 
+Currently the code in `sbase/` compiles to a binary used for downloading apps from Splunkbase.  See `sbase/README.md` for usage.
+
+---
+
 Deploying Splunk apps to a standalone, or small Splunk install is pretty much a solved issue.  You can search for apps on Splunkbase, deploy them, and update them in a simpole easy UI.
 
 A more complex environment, one with search head clustering, indexer clustering, distributed search, HEC Heavy forwarders, API Heavy Forwarders, Cluster Managers, Deployers, Searhc Head Deployers and Deployment Servers is significantly harder to ensure that the right parts of an app or addon are in the right place, and that you can update them when needed.

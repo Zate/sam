@@ -16,8 +16,8 @@
 
 *.env
 sam
-*/apps/*
-*.env*
-*/data/*
-*/*.tar.gz
+**/apps/*
+**.env*
+**/data/*
+**/*.tar.gz
 sbase/sbase
