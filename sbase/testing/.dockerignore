@@ -1,6 +1,0 @@
-.gitignore
-apps/*
-.env
-.editorconfig
-data/*
-*.tar.gz

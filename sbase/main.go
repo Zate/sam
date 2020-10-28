@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -19,57 +18,6 @@ import (
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
-
-// ServerHealth is returned by splunk Server server/health endpoint
-type ServerHealth struct {
-	Links struct {
-	} `json:"links"`
-	Origin    string    `json:"origin"`
-	Updated   time.Time `json:"updated"`
-	Generator struct {
-		Build   string `json:"build"`
-		Version string `json:"version"`
-	} `json:"generator"`
-	Entry []struct {
-		Name    string    `json:"name"`
-		ID      string    `json:"id"`
-		Updated time.Time `json:"updated"`
-		Links   struct {
-			Alternate string `json:"alternate"`
-			List      string `json:"list"`
-			Details   string `json:"details"`
-		} `json:"links"`
-		Author string `json:"author"`
-		ACL    struct {
-			App        string `json:"app"`
-			CanList    bool   `json:"can_list"`
-			CanWrite   bool   `json:"can_write"`
-			Modifiable bool   `json:"modifiable"`
-			Owner      string `json:"owner"`
-			Perms      struct {
-				Read  []string      `json:"read"`
-				Write []interface{} `json:"write"`
-			} `json:"perms"`
-			Removable bool   `json:"removable"`
-			Sharing   string `json:"sharing"`
-		} `json:"acl"`
-		Fields struct {
-			Required []interface{} `json:"required"`
-			Optional []interface{} `json:"optional"`
-			Wildcard []interface{} `json:"wildcard"`
-		} `json:"fields"`
-		Content struct {
-			EaiACL interface{} `json:"eai:acl"`
-			Health string      `json:"health"`
-		} `json:"content"`
-	} `json:"entry"`
-	Paging struct {
-		Total   int `json:"total"`
-		PerPage int `json:"perPage"`
-		Offset  int `json:"offset"`
-	} `json:"paging"`
-	Messages []interface{} `json:"messages"`
-}
 
 // App stuff
 type App struct {
@@ -127,88 +75,10 @@ type Release []struct {
 	CloudCompatible           bool          `json:"cloud_compatible"`
 }
 
-// AppDownload struct for response from splunk server after it downloads the file.
-type AppDownload struct {
-	Links struct {
-		Create string `json:"create"`
-		Reload string `json:"_reload"`
-	} `json:"links"`
-	Origin    string    `json:"origin"`
-	Updated   time.Time `json:"updated"`
-	Generator struct {
-		Build   string `json:"build"`
-		Version string `json:"version"`
-	} `json:"generator"`
-	Entry []struct {
-		Name    string    `json:"name"`
-		ID      string    `json:"id"`
-		Updated time.Time `json:"updated"`
-		Links   struct {
-			Alternate string `json:"alternate"`
-			List      string `json:"list"`
-			Reload    string `json:"_reload"`
-			Edit      string `json:"edit"`
-			Remove    string `json:"remove"`
-			Package   string `json:"package"`
-		} `json:"links"`
-		Author string `json:"author"`
-		ACL    struct {
-			App            string `json:"app"`
-			CanChangePerms bool   `json:"can_change_perms"`
-			CanList        bool   `json:"can_list"`
-			CanShareApp    bool   `json:"can_share_app"`
-			CanShareGlobal bool   `json:"can_share_global"`
-			CanShareUser   bool   `json:"can_share_user"`
-			CanWrite       bool   `json:"can_write"`
-			Modifiable     bool   `json:"modifiable"`
-			Owner          string `json:"owner"`
-			Perms          struct {
-				Read  []string `json:"read"`
-				Write []string `json:"write"`
-			} `json:"perms"`
-			Removable bool   `json:"removable"`
-			Sharing   string `json:"sharing"`
-		} `json:"acl"`
-		Content struct {
-			AttributionLink            string      `json:"attribution_link"`
-			Author                     string      `json:"author"`
-			Build                      int64       `json:"build"`
-			CheckForUpdates            bool        `json:"check_for_updates"`
-			Configured                 bool        `json:"configured"`
-			Core                       bool        `json:"core"`
-			Description                string      `json:"description"`
-			Details                    string      `json:"details"`
-			Disabled                   bool        `json:"disabled"`
-			EaiACL                     interface{} `json:"eai:acl"`
-			InstallSourceChecksum      string      `json:"install_source_checksum"`
-			Label                      string      `json:"label"`
-			Location                   string      `json:"location"`
-			ManagedByDeploymentClient  bool        `json:"managed_by_deployment_client"`
-			Name                       string      `json:"name"`
-			ShowInNav                  bool        `json:"show_in_nav"`
-			SourceLocation             string      `json:"source_location"`
-			StateChangeRequiresRestart bool        `json:"state_change_requires_restart"`
-			Status                     string      `json:"status"`
-			Version                    string      `json:"version"`
-			Visible                    bool        `json:"visible"`
-		} `json:"content"`
-	} `json:"entry"`
-	Paging struct {
-		Total   int `json:"total"`
-		PerPage int `json:"perPage"`
-		Offset  int `json:"offset"`
-	} `json:"paging"`
-	Messages []struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
-	} `json:"messages"`
-}
-
 // Creds struct contains username and password to auth to Splunkbase
 type Creds struct {
 	username string
 	password string
-	splunkp  string
 	auth     string
 }
 
@@ -226,12 +96,6 @@ type Feed struct {
 	ID      string   `xml:"id"`
 }
 
-// Server struct
-type Server struct {
-	name string
-	port string
-}
-
 // LoadCreds grabs username and password from SB_USER and SB_PASSWD env vars
 func LoadCreds() (c *Creds) {
 	logger().Debug("Start")
@@ -242,65 +106,9 @@ func LoadCreds() (c *Creds) {
 	if os.Getenv("SBASE_P") == "" {
 		logger().Fatalf("SBASE_P Not Set: ", os.Getenv("SBASE_P"))
 	}
-	if os.Getenv("SPLUNK_PASSWORD") == "" {
-		logger().Fatalf("SPLUNK_PASSWORD Not Set: ", os.Getenv("SPLUNK_PASSWORD"))
-	}
 	cr.username = os.Getenv("SBASE_U")
 	cr.password = os.Getenv("SBASE_P")
-	cr.splunkp = os.Getenv("SPLUNK_PASSWORD")
 	return cr
-}
-
-// ServerInfo returns Server struct with info from .env
-func ServerInfo() *Server {
-	logger().Debug("Start")
-	s := new(Server)
-	if os.Getenv("SPLUNK_SERVER") == "" {
-		s.name = "localhost"
-	} else {
-		s.name = os.Getenv("SPLUNK_SERVER")
-	}
-	if os.Getenv("SPLUNK_SERVER_PORT") == "" {
-		s.port = "8089"
-	} else {
-		s.port = os.Getenv("SPLUNK_SERVER_PORT")
-	}
-	return s
-}
-
-// CheckSplunk will see if the splunk server is up and we can make REST API requests to it, if not, it will err.
-func CheckSplunk(cr *Creds) (b *ServerHealth, err error) {
-	logger().Debug("Start")
-	s := ServerInfo()
-	b = new(ServerHealth)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	cl := &http.Client{Transport: tr}
-	url := "https://" + s.name + ":" + s.port + "/services/server/health/splunkd?output_mode=json"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		logger().Errorln(err)
-		return b, err
-	}
-	req.SetBasicAuth("admin", cr.splunkp)
-	res, err := cl.Do(req)
-	if err != nil {
-		logger().Errorln(err)
-		return b, err
-	}
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		logger().Errorln(err)
-		return b, err
-	}
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		logger().Errorln(err)
-		return b, err
-	}
-	return b, nil
-
 }
 
 // AuthToken function
@@ -363,40 +171,27 @@ func GetApp(a string) (app *App) {
 }
 
 // DownloadApp func downloads the app through Splunk server
-func DownloadApp(a *App, c *Creds) (ad *AppDownload, err error) {
+func DownloadApp(a *App, c *Creds) (body []byte, err error) {
 	logger().Debug("Start")
-	s := ServerInfo()
-	ad = new(AppDownload)
-	name := "https://splunkbase.splunk.com/app/" + a.UID.String() + "/release/" + a.Release[0].Name + "/download/"
-	data := url.Values{}
-	data.Set("name", name)
-	data.Set("update", "true")
-	data.Set("filename", "true")
-	data.Set("auth", c.auth)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	cl := &http.Client{Transport: tr}
-	url := "https://" + s.name + ":" + s.port + "/services/apps/local/?output_mode=json"
-	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+	url := "https://splunkbase.splunk.com/app/" + a.UID.String() + "/release/" + a.Release[0].Name + "/download/"
+	cl := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		logger().Errorln(err)
-		return ad, err
+		return body, err
 	}
-	req.SetBasicAuth("admin", c.splunkp)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("X-Auth-Token", c.auth)
 	res, err := cl.Do(req)
 	if err != nil {
 		logger().Errorln(err)
-		return ad, err
+		return body, err
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	body, err = ioutil.ReadAll(res.Body)
 	if err != nil {
 		logger().Errorln(err)
-		return ad, err
+		return body, err
 	}
-	err = json.Unmarshal(body, &ad)
-	return ad, nil
+	return body, nil
 }
 
 // CheckDir looks to see if the directory structure for this app exists, if not, creates it.
@@ -409,41 +204,6 @@ func CheckDir(path string) error {
 		return nil
 	}
 	logger().Debugf("%v created", path)
-	return nil
-}
-
-// ZipFile grabs the file from docker and zips it up in the local directory
-func ZipFile(ad *AppDownload, c *Creds, path string) (fn string, err error) {
-	logger().Debug("Start")
-	dirName := ad.Entry[0].Content.Name
-	fn = ad.Entry[0].Content.Name + "_" + ad.Entry[0].Content.Version + ".tar.gz"
-	logger().Debugln(fn)
-	_, err = CheckSplunk(c)
-	if err != nil {
-		logger().Errorln(err)
-		return fn, err
-	}
-	// Need to hook this into the container creation so we get the container name direct.
-	sl := "testing_so1_1:" + ad.Entry[0].Content.SourceLocation
-	com := "docker cp " + sl + " " + path + " && " + "tar -zcf " + path + fn + " " + path + dirName + " && " + "rm -rf " + path + dirName
-	err = RunCMD("bash", []string{"-c", com})
-	if err != nil {
-		logger().Errorln(err)
-		return fn, err
-	}
-	return fn, nil
-}
-
-// RunCMD runs a command in the shell
-func RunCMD(c string, a []string) error {
-	logger().Debug("Start")
-	cmd := exec.Command(c, a...)
-	cmd.Stderr = os.Stderr
-	_, err := cmd.Output()
-	if err != nil {
-		logger().Errorln(err)
-		return err
-	}
 	return nil
 }
 
@@ -460,25 +220,16 @@ func logger() *log.Entry {
 }
 
 var appid string
-
-//var checks bool
-//var quiet bool
 var debug bool
 
 func init() {
 	flag.StringVar(&appid, "a", "", "AppID to Download")
-	//flag.BoolVar(&checks, "c", false, "Perform Checks on Splunk Server")
-	//flag.BoolVar(&quiet, "q", false, "Disable Logging Entries and just output json")
 	flag.BoolVar(&debug, "d", false, "Turn on Debug")
 	flag.Parse()
 	if appid == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	// if quiet != false {
-	// 	log.SetOutput(ioutil.Discard)
-
-	// }
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
@@ -504,13 +255,13 @@ func main() {
 	s.Suffix = "  > Parsing AppInfo"
 	z := GetApp(appid)
 	s.Suffix = "  > Downloading " + appid
-	ad, err := DownloadApp(z, Cr)
+	tgz, err := DownloadApp(z, Cr)
 	if err != nil {
 		logger().Fatalln(err)
 	}
 	// Check if there is already a dir structure for this app, if not, create it.
 	filePath := "apps/" + z.UID.String() + "/" + z.Appid + "/"
-	path := filePath + ad.Entry[0].Content.Version + "/"
+	path := filePath + z.Release[0].Name + "/"
 	s.Suffix = "  > Creating " + path
 	err = CheckDir(path)
 	if err != nil {
@@ -525,13 +276,10 @@ func main() {
 	if err != nil {
 		logger().Fatalln(err)
 	}
-	s.Suffix = "  > Getting files from Splunk"
-	_, err = ZipFile(ad, Cr, path)
+	err = ioutil.WriteFile(path+z.Appid+"_"+z.Release[0].Name+".tar.gz", tgz, 0644)
 	if err != nil {
 		logger().Fatalln(err)
 	}
-	s.FinalMSG = "Download for " + z.UID.String() + " - " + z.Title + " Version: " + ad.Entry[0].Content.Version + " is complete!\nFiles located at " + path + " "
+	s.FinalMSG = "Download for " + z.UID.String() + " - " + z.Title + " Version: " + z.Release[0].Name + " is complete!\nFiles located at " + path + " "
 	s.Stop()
-	//fmt.Printf("Done! %v : %v Downloaded: Detailed Information in %vappinfo.json", z.UID.String(), z.Title, filePath)
-
 }

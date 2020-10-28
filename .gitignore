@@ -15,12 +15,17 @@
 # vendor/
 
 *.env
-sam
-**/apps/*
-**.env*
-**/data/*
-**/proxy/*
-**/*.tar.gz
 sbase/sbase
-*.notes
+# sam
+**/apps/*
+# **.env*
+# **/testing/**
+# **/*.tar.gz
+# sbase/*
+# !sbase/*.md
+
+# !*/*.md
+# *.notes
 **/*.notes
+# sbase/testing/sbaseDirect.sh
+# !sbase/Splunkbase_API.md
