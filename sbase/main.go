@@ -509,7 +509,7 @@ func main() {
 		logger().Fatalln(err)
 	}
 	// Check if there is already a dir structure for this app, if not, create it.
-	filePath := "apps/" + z.UID.String() + "/" + ad.Entry[0].Name + "/"
+	filePath := "apps/" + z.UID.String() + "/" + z.Appid + "/"
 	path := filePath + ad.Entry[0].Content.Version + "/"
 	s.Suffix = "  > Creating " + path
 	err = CheckDir(path)

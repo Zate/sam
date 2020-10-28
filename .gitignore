@@ -19,5 +19,8 @@ sam
 **/apps/*
 **.env*
 **/data/*
+**/proxy/*
 **/*.tar.gz
 sbase/sbase
+*.notes
+**/*.notes
