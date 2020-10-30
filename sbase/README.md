@@ -10,7 +10,7 @@
 
 ## Requirements
 
-- .env file laid out similar to env.example with your Splunkbase username and password 
+- .env file laid out similar to env.example with your Splunkbase username and password
   - `SBASE_P`
   - `SBASE_U`
 

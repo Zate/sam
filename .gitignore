@@ -16,6 +16,7 @@
 
 *.env
 sbase/sbase
+pkgr/pkgr
 # sam
 **/apps/*
 # **.env*

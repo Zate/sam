@@ -1,4 +1,4 @@
-package main
+package sbase
 
 import (
 	"crypto/tls"
@@ -41,6 +41,8 @@ type App struct {
 	ArchiveStatus            string      `json:"archive_status"`
 	IsArchived               bool        `json:"is_archived"`
 	FedrampValidation        string      `json:"fedramp_validation"`
+	LatestVersion            string      `json:"latest_version"`
+	LatestRelease            string      `json:"latest_release"`
 	Release                  Release     `json:"release"`
 }
 
@@ -246,7 +248,6 @@ func main() {
 	logger().Debug("Start")
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Build our new spinner
 	s.Color("red", "bold")
-	s.FinalMSG = "Complete!\nNew line!\nAnother one!\n"
 	s.Start()
 	s.Suffix = "  > Loading Environment" // Start the spinner
 	Cr := LoadCreds()
@@ -254,14 +255,17 @@ func main() {
 	Cr.auth = AuthToken(Cr)
 	s.Suffix = "  > Parsing AppInfo"
 	z := GetApp(appid)
+	z.LatestVersion = z.Release[0].Name
+	z.LatestRelease = string(z.Release[0].ID)
 	s.Suffix = "  > Downloading " + appid
 	tgz, err := DownloadApp(z, Cr)
 	if err != nil {
 		logger().Fatalln(err)
 	}
 	// Check if there is already a dir structure for this app, if not, create it.
+
 	filePath := "apps/" + z.UID.String() + "/" + z.Appid + "/"
-	path := filePath + z.Release[0].Name + "/"
+	path := filePath + z.LatestVersion + "/"
 	s.Suffix = "  > Creating " + path
 	err = CheckDir(path)
 	if err != nil {
@@ -272,14 +276,16 @@ func main() {
 	if err != nil {
 		logger().Fatalln(err)
 	}
-	err = ioutil.WriteFile(filePath+"appinfo.json", file, 0644)
+	err = ioutil.WriteFile("apps/"+z.UID.String()+"/appinfo.json", file, 0644)
+	logger().Debug("Writing apps/" + z.UID.String() + "/appinfo.json")
 	if err != nil {
 		logger().Fatalln(err)
 	}
-	err = ioutil.WriteFile(path+z.Appid+"_"+z.Release[0].Name+".tar.gz", tgz, 0644)
+	err = ioutil.WriteFile(path+z.Appid+"_"+z.LatestVersion+".tar.gz", tgz, 0644)
+	logger().Debug("Writing " + path + z.Appid + "_" + z.LatestVersion + ".tar.gz")
 	if err != nil {
 		logger().Fatalln(err)
 	}
-	s.FinalMSG = "Download for " + z.UID.String() + " - " + z.Title + " Version: " + z.Release[0].Name + " is complete!\nFiles located at " + path + " "
+	s.FinalMSG = "Download for " + z.UID.String() + " - " + z.Title + " Version: " + z.LatestVersion + " is complete!\nFiles located at " + path + " "
 	s.Stop()
 }
