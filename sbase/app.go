@@ -1,8 +1,11 @@
-package pkgr
+package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 )
@@ -90,10 +93,94 @@ func appinfo(id string) (a App) {
 	f, err := ioutil.ReadFile(info)
 	if err != nil {
 		logger().Errorln(err)
+		os.Exit(1)
 	}
 	err = json.Unmarshal([]byte(f), &a)
 	if err != nil {
 		logger().Errorln(err)
 	}
 	return a
+}
+
+// GetURL returns Body from Splunkbase API request.
+func GetURL(u string) (body []byte) {
+	logger().Debug("Start")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+	cl := &http.Client{Transport: tr}
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	res, err := cl.Do(req)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	return body
+}
+
+// GetApp takes an appid and calls Splunkbase API to get info about the app.
+func GetApp(a string) (app App) {
+	logger().Debug("Start")
+	// var app App
+	u := "https://splunkbase.splunk.com/api/v1/app/" + a + "/"
+	b := GetURL(u)
+	err := json.Unmarshal(b, &app)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	u = u + "release/"
+	b = GetURL(u)
+	err = json.Unmarshal(b, &app.Release)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	return app
+}
+
+// DownloadApp func downloads the app through Splunk server
+func DownloadApp(a *App, c *Creds) (body []byte) {
+	logger().Debug("Start")
+	url := "https://splunkbase.splunk.com/app/" + fmt.Sprint(a.UID) + "/release/" + a.Release[0].Name + "/download/"
+	cl := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	req.Header.Add("X-Auth-Token", c.auth)
+	res, err := cl.Do(req)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		logger().Fatalln(err)
+		os.Exit(1)
+	}
+	return body
+}
+
+// CheckDir looks to see if the directory structure for this app exists, if not, creates it.
+func CheckDir(path string) error {
+	logger().Debug("Start")
+	// Apps / AppID / Name / Ver
+	logger().Debugln(path)
+	if err := os.MkdirAll(path, 0755); os.IsExist(err) {
+		logger().Errorf("%v already exists", path)
+		return nil
+	}
+	logger().Debugf("%v created", path)
+	return nil
 }
