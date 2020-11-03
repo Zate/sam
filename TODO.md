@@ -1,5 +1,6 @@
 # To Do List and Notes
 
+- Need to add a way to search for packages.
 - Going to use <https://github.com/gobuffalo/buffalo> for the web bits.
 - Need a package to work with the app package
   - unpack package
