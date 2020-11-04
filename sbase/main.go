@@ -14,9 +14,11 @@ import (
 )
 
 var (
-	appid    string
-	debug    bool
-	manifest string
+	appid       string
+	debug       bool
+	manifest    string
+	catalogpath string
+	catalog     bool
 )
 
 const (
@@ -26,9 +28,11 @@ const (
 func init() {
 	flag.StringVar(&appid, "a", "", "AppID to Download")
 	flag.StringVar(&manifest, "m", filePath+"manifest.json", "Path to manifest.json")
+	flag.StringVar(&catalogpath, "cp", filePath+"catalog.json", "Path to catalog.json")
+	flag.BoolVar(&catalog, "c", false, "Update Catalog")
 	flag.BoolVar(&debug, "d", false, "Turn on Debug")
 	flag.Parse()
-	if appid == "" {
+	if appid == "" && catalog == false {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -49,6 +53,13 @@ func init() {
 
 func main() {
 	logger().Debug("Start")
+	// if catalog != false {
+
+	// 	getAllApps(catalogpath)
+
+	// 	os.Exit(1)
+
+	// }
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Color("red", "bold")
 	s.Start()
