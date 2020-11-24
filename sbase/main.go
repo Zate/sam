@@ -19,6 +19,8 @@ var (
 	manifest    string
 	catalogpath string
 	catalog     bool
+	dlpath      string
+	dlpathInfo  os.FileInfo
 )
 
 const (
@@ -29,12 +31,23 @@ func init() {
 	flag.StringVar(&appid, "a", "", "AppID to Download")
 	flag.StringVar(&manifest, "m", filePath+"manifest.json", "Path to manifest.json")
 	flag.StringVar(&catalogpath, "cp", filePath+"catalog.json", "Path to catalog.json")
-	flag.BoolVar(&catalog, "c", false, "Update Catalog")
+	flag.StringVar(&dlpath, "p", "", "Path to extract the addon")
+	flag.BoolVar(&catalog, "c", false, "Update Catalog (Not Functioning)")
 	flag.BoolVar(&debug, "d", false, "Turn on Debug")
 	flag.Parse()
-	if appid == "" && catalog == false {
+	if (appid == "" && catalog == false) || catalog == true {
 		flag.PrintDefaults()
 		os.Exit(1)
+	}
+	if dlpath != "" {
+		// lets validate this path exists
+		dlpathInfo, err := checkPath(dlpath)
+		if err != nil {
+			fmt.Printf("%v \n\nUsage:\n", err)
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+		logger().Debugln(dlpathInfo.Name())
 	}
 	if err := godotenv.Load(); err != nil {
 		logger().Debug("No .env file found")
@@ -99,7 +112,7 @@ func main() {
 	}
 	svrTypes := []string{"idx", "fwd", "shc"}
 	s.Suffix = "  > Unpacking " + z.Appid + "Version: " + z.LatestVersion
-	UnpackApp(&z, svrTypes)
+	UnpackApp(&z, svrTypes, dlpath)
 	logger().Debug(len(z.Packages[0].Objects))
 	s.FinalMSG = "Download for " + fmt.Sprint(z.UID) + " - " + z.Title + " Version: " + z.LatestVersion + " is complete!\nFiles located at " + path + " "
 	s.Stop()

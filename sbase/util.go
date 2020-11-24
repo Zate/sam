@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"strconv"
@@ -28,4 +29,16 @@ func doExist(s string) bool {
 		return false
 	}
 	return true
+}
+
+func checkPath(s string) (os.FileInfo, error) {
+	// lets validate this path exists
+	dlpathInfo, err := os.Stat(s)
+	if err != nil {
+		return nil, err
+	}
+	if dlpathInfo.IsDir() == false {
+		return nil, errors.New("Not a directory: " + s)
+	}
+	return dlpathInfo, nil
 }

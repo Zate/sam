@@ -101,7 +101,7 @@ func Tar(src string, writers ...io.Writer) error {
 }
 
 // UnpackApp takes an appid string and finds the latest version of that app and unpacks 3 copies of it.
-func UnpackApp(a *App, t []string) {
+func UnpackApp(a *App, t []string, f string) {
 	logger().Debug("Start")
 
 	logger().Debug(a.Appid)
@@ -135,6 +135,19 @@ func UnpackApp(a *App, t []string) {
 		logger().Debug(len(p.Objects))
 		a.Packages = append(a.Packages, p)
 	}
+	if f != "" {
+		r, err := os.Open(tgz)
+		if err != nil {
+			logger().Fatalln(err)
+			os.Exit(1)
+		}
+		err = Untar(f, r)
+		if err != nil {
+			logger().Fatalln(err)
+			os.Exit(1)
+		}
+	}
+
 	return
 }
 
