@@ -1,7 +1,4 @@
 **.env
-**sbase/sbase
-**sbase/sam
-dldr/dldr
 **/apps/*
-sbase/sam
-
+pkg/dldr/dldr
+cmd/sbclient/sbclient
