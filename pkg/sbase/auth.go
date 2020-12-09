@@ -6,32 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 )
 
-// Creds struct contains username and password to auth to Splunkbase
-type Creds struct {
-	Username string
-	Password string
-	Auth     string
-}
-
-// Auth Strict
-type Auth struct {
-	XMLName xml.Name `xml:"xml"`
-	Feed    Feed     `xml:"feed"`
-}
-
-// Feed Struct
-type Feed struct {
-	XMLName xml.Name `xml:"feed"`
-	Title   string   `xml:"title"`
-	Updated string   `xml:"updated"`
-	ID      string   `xml:"id"`
-}
-
 // LoadCreds grabs username and password from SB_USER and SB_PASSWD env vars
-func LoadCreds() (c *Creds) {
-	Logger().Debug("Start")
+func (sb *SBase) LoadCreds() {
+	defer TimeTrack(time.Now())
 	cr := new(Creds)
 	if os.Getenv("SBASE_U") == "" {
 		Logger().Fatalf("SBASE_U Not Set: %v", os.Getenv("SBASE_U"))
@@ -43,32 +23,25 @@ func LoadCreds() (c *Creds) {
 	}
 	cr.Username = os.Getenv("SBASE_U")
 	cr.Password = os.Getenv("SBASE_P")
-	return cr
+	sb.Creds = cr
+	return
 }
 
 // AuthToken function
-func AuthToken(cr *Creds) string {
-	Logger().Debug("Start")
+func (sb *SBase) AuthToken() {
+	defer TimeTrack(time.Now())
 	formData := url.Values{
-		"username": {cr.Username},
-		"password": {cr.Password},
+		"username": {sb.Creds.Username},
+		"password": {sb.Creds.Password},
 	}
 	res, err := http.PostForm("https://splunkbase.splunk.com/api/account:login/", formData)
-	if err != nil {
-		Logger().Fatalln(err)
-		os.Exit(1)
-	}
+	ChkErr(err)
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		Logger().Fatalln(err)
-		os.Exit(1)
-	}
+	ChkErr(err)
 	var auth Feed
 	err = xml.Unmarshal(body, &auth)
-	if err != nil {
-		Logger().Fatalln(err)
-		os.Exit(1)
-	}
-	return auth.ID
+	ChkErr(err)
+	sb.Creds.Auth = auth.ID
+	return
 }

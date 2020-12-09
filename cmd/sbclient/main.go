@@ -17,16 +17,19 @@ import (
 var (
 	appid       string
 	debug       bool
-	manifest    string
+	appspath    string
 	catalogpath string
 	catalog     bool
 	dlpath      string
 	dlpathInfo  os.FileInfo
+	s           = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	sb          = sbase.New()
 )
 
 func init() {
+	defer sbase.TimeTrack(time.Now())
 	flag.StringVar(&appid, "a", "", "AppID to Download")
-	flag.StringVar(&manifest, "m", sbase.FilePath+"manifest.json", "Path to manifest.json")
+	flag.StringVar(&appspath, "m", sbase.FilePath, "Path to download apps")
 	flag.StringVar(&catalogpath, "cp", sbase.FilePath+"catalog.json", "Path to catalog.json")
 	flag.StringVar(&dlpath, "p", "", "Path to extract the addon")
 	flag.BoolVar(&catalog, "c", false, "Update Catalog (Not Functioning)")
@@ -35,6 +38,9 @@ func init() {
 	if (appid == "" && catalog == false) || catalog == true {
 		flag.PrintDefaults()
 		os.Exit(1)
+	}
+	if debug != false {
+		log.SetLevel(log.DebugLevel)
 	}
 	if dlpath != "" {
 		// lets validate this path exists
@@ -50,19 +56,12 @@ func init() {
 		sbase.Logger().Debug("No .env file found")
 	}
 	log.SetFormatter(&log.JSONFormatter{})
-	sbase.Logger().Debug("Init")
-	if debug != false {
-		log.SetLevel(log.DebugLevel)
-	}
-	m := sbase.FilePath + "manifest.json"
-	if manifest != "" {
-		m = manifest
-	}
-	sbase.LoadManifest(m)
+	sbase.FilePath = appspath
+	sb.LoadManifest(appspath)
 }
 
 func main() {
-	sbase.Logger().Debug("Start")
+	defer sbase.TimeTrack(time.Now())
 	// if catalog != false {
 
 	// 	getAllApps(catalogpath)
@@ -70,47 +69,49 @@ func main() {
 	// 	os.Exit(1)
 
 	// }
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Color("red", "bold")
-	s.Start()
-	s.Suffix = "  > Loading Environment"
-	Cr := sbase.LoadCreds()
-	s.Suffix = "  > Getting Splunkbase Auth Token"
-	Cr.Auth = sbase.AuthToken(Cr)
-	s.Suffix = "  > Parsing AppInfo"
-	z := sbase.GetApp(appid)
+	if debug == false {
+		s.Color("red", "bold")
+		s.Start()
+		s.Suffix = "  > Loading Environment"
+	}
+	sb.LoadCreds()
+	if debug == false {
+		s.Suffix = "  > Getting Splunkbase Auth Token"
+	}
+	sb.AuthToken()
+	if debug == false {
+		s.Suffix = "  > Parsing AppInfo"
+	}
+	z := sb.GetApp(appid)
 	z.LatestVersion = z.Release[0].Name
-	z.LatestRelease = string(z.Release[0].ID)
-	s.Suffix = "  > Downloading " + appid
-	tgz := sbase.DownloadApp(&z, Cr)
+	z.LatestRelease = fmt.Sprint(z.Release[0].ID)
+	if debug == false {
+		s.Suffix = "  > Downloading " + appid
+	}
+	tgz := sb.DownloadApp(&z)
 	fPath := sbase.FilePath + fmt.Sprint(z.UID) + "/" + z.Appid + "/"
 	path := fPath + z.LatestVersion + "/"
-	s.Suffix = "  > Creating " + path
+	if debug == false {
+		s.Suffix = "  > Creating " + path
+	}
 	err := sbase.CheckDir(path)
-	if err != nil {
-		sbase.Logger().Fatalln(err)
+	sbase.ChkErr(err)
+	if debug == false {
+		s.Suffix = "  > Writing appinfo.json"
 	}
-	s.Suffix = "  > Writing appinfo.json"
 	file, err := json.MarshalIndent(z, "", " ")
-	if err != nil {
-		sbase.Logger().Fatalln(err)
-	}
+	sbase.ChkErr(err)
 	err = ioutil.WriteFile(sbase.FilePath+fmt.Sprint(z.UID)+"/appinfo.json", file, 0644)
-	sbase.Logger().Debug("Writing " + sbase.FilePath + fmt.Sprint(z.UID) + "/appinfo.json")
-	if err != nil {
-		sbase.Logger().Fatalln(err)
-
-	}
+	sbase.ChkErr(err)
 	err = ioutil.WriteFile(path+z.Appid+"_"+z.LatestVersion+".tar.gz", tgz, 0644)
-	sbase.Logger().Debug("Writing " + path + z.Appid + "_" + z.LatestVersion + ".tar.gz")
-	if err != nil {
-		sbase.Logger().Fatalln(err)
-		os.Exit(1)
-	}
+	sbase.ChkErr(err)
 	svrTypes := []string{"idx", "fwd", "shc"}
-	s.Suffix = "  > Unpacking " + z.Appid + "Version: " + z.LatestVersion
+	if debug == false {
+		s.Suffix = "  > Unpacking " + z.Appid + "Version: " + z.LatestVersion
+	}
 	sbase.UnpackApp(&z, svrTypes, dlpath)
-	sbase.Logger().Debug(len(z.Packages[0].Objects))
-	s.FinalMSG = "Download for " + fmt.Sprint(z.UID) + " - " + z.Title + " Version: " + z.LatestVersion + " is complete!\nFiles located at " + path + " "
-	s.Stop()
+	if debug == false {
+		s.FinalMSG = "Download for " + fmt.Sprint(z.UID) + " - " + z.Title + " Version: " + z.LatestVersion + " is complete!\nFiles located at " + path + " \n\n"
+		s.Stop()
+	}
 }

@@ -8,15 +8,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Untar takes a dst location and an io.Reader and creates files/directories based on what is in the tar.gz file.
 func Untar(dst string, r io.Reader) error {
-
+	defer TimeTrack(time.Now())
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
-		Logger().Fatalln(err)
-		os.Exit(1)
+		return err
 	}
 	defer gzr.Close()
 	tr := tar.NewReader(gzr)
@@ -26,8 +26,7 @@ func Untar(dst string, r io.Reader) error {
 		case err == io.EOF:
 			return nil
 		case err != nil:
-			Logger().Fatalln(err)
-			os.Exit(1)
+			return err
 		case header == nil:
 			continue
 		}
@@ -36,8 +35,7 @@ func Untar(dst string, r io.Reader) error {
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, 0755); err != nil {
-					Logger().Fatalln(err)
-					os.Exit(1)
+					return err
 				}
 			}
 		case tar.TypeReg:
@@ -55,7 +53,7 @@ func Untar(dst string, r io.Reader) error {
 
 // Tar takes a src folder as a string and writes out a .tar.gz file
 func Tar(src string, writers ...io.Writer) error {
-
+	defer TimeTrack(time.Now())
 	_, err := os.Stat(src)
 	if err != nil {
 		Logger().Fatalln(err)
@@ -102,11 +100,9 @@ func Tar(src string, writers ...io.Writer) error {
 
 // UnpackApp takes an appid string and finds the latest version of that app and unpacks 3 copies of it.
 func UnpackApp(a *App, t []string, f string) {
-	Logger().Debug("Start")
+	defer TimeTrack(time.Now())
 
-	Logger().Debug(a.Appid)
 	tgz := FilePath + fmt.Sprint(a.UID) + "/" + a.Appid + "/" + a.LatestVersion + "/" + a.Appid + "_" + a.LatestVersion + ".tar.gz"
-	Logger().Debug(tgz)
 
 	for _, s := range t {
 		target := FilePath + fmt.Sprint(a.UID) + "/" + s + "/"
@@ -127,12 +123,11 @@ func UnpackApp(a *App, t []string, f string) {
 		}
 		var p Package
 		p.DType = s
-		err = filepath.Walk(target, getFiles(&p))
+		err = filepath.Walk(target, GetFiles(&p))
 		if err != nil {
 			Logger().Fatalln(err)
 			os.Exit(1)
 		}
-		Logger().Debug(len(p.Objects))
 		a.Packages = append(a.Packages, p)
 	}
 	if f != "" {
@@ -147,11 +142,12 @@ func UnpackApp(a *App, t []string, f string) {
 			os.Exit(1)
 		}
 	}
-
 	return
 }
 
-func getFiles(p *Package) filepath.WalkFunc {
+// GetFiles walks all the folders in a package and puts the file info into the Package struct
+func GetFiles(p *Package) filepath.WalkFunc {
+	defer TimeTrack(time.Now())
 	i := 1
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {

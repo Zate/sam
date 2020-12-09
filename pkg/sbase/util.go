@@ -2,18 +2,37 @@ package sbase
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	// FilePath refers to where we store the apps.
-	FilePath = "apps/"
-)
+// TimeTrack is used to measure how long a function takes to run for debug.
+func TimeTrack(start time.Time) {
+	elapsed := time.Since(start)
+
+	// Skip this function, and fetch the PC and file for its parent.
+	pc, file, line, _ := runtime.Caller(1)
+
+	// Retrieve a function object this functions parent.
+	funcObj := runtime.FuncForPC(pc)
+
+	// Regex to extract just the function name (and not the module path).
+	runtimeFunc := regexp.MustCompile(`^.*\.(.*)$`)
+	name := runtimeFunc.ReplaceAllString(funcObj.Name(), "$1")
+
+	filename := file[strings.LastIndex(file, "/")+1:] + ":" + strconv.Itoa(line)
+	fn := name[strings.LastIndex(name, ".")+1:]
+
+	log.WithField("file", filename).WithField("function", fn).WithField("elapsed", fmt.Sprintf("duration: %s", elapsed)).Debugln("Debug")
+}
 
 // Logger for logging
 func Logger() *log.Entry {
@@ -48,4 +67,26 @@ func CheckPath(s string) (os.FileInfo, error) {
 		return nil, errors.New("Not a directory: " + s)
 	}
 	return dlpathInfo, nil
+}
+
+// ReadFile reads the file at the location of the string given and returns a []byte array of the contents
+func ReadFile(f string) ([]byte, error) {
+	b, err := ioutil.ReadFile(f)
+	if err != nil {
+		return []byte{}, err
+	}
+	return b, nil
+}
+
+// ChkErr checks for an error.  If there os one, it logs it and fatals
+func ChkErr(e error) {
+	pc, file, line, _ := runtime.Caller(1)
+	filename := file[strings.LastIndex(file, "/")+1:] + ":" + strconv.Itoa(line)
+	funcname := runtime.FuncForPC(pc).Name()
+	fn := funcname[strings.LastIndex(funcname, ".")+1:]
+	if e != nil {
+		Logger().WithField("file", filename).WithField("function", fn).Errorln(e)
+		os.Exit(1)
+	}
+	return
 }
