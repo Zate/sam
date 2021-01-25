@@ -2,3 +2,6 @@
 **/apps/*
 pkg/dldr/dldr
 cmd/sbclient/sbclient
+cmd/sbclient/test*
+**/test*/*
+
