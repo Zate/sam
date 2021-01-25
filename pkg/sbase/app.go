@@ -40,8 +40,10 @@ func GetURL(u string) (body []byte) {
 	req, err := http.NewRequest("GET", u, nil)
 	ChkErr(err)
 	res, err := cl.Do(req)
+
 	ChkErr(err)
 	body, err = ioutil.ReadAll(res.Body)
+
 	ChkErr(err)
 	return body
 }
@@ -61,17 +63,25 @@ func (sb *SBase) GetApp(a string) (app App) {
 	return app
 }
 
+// // CheckVer verifies that the version you are requesting is the latest one for download on the website.
+// func (sb *SBase) CheckVer(a string) string {
+// 	return ""
+// }
+
 // DownloadApp func downloads the app through Splunk server
 func (sb *SBase) DownloadApp(a *App) (body []byte) {
 	defer TimeTrack(time.Now())
-	url := "https://splunkbase.splunk.com/app/" + fmt.Sprint(a.UID) + "/release/" + a.Release[0].Name + "/download/"
+	url := "https://splunkbase.splunk.com/app/" + fmt.Sprint(a.UID) + "/release/" + a.LatestVersion + "/download/"
+	// fmt.Println(url)
 	cl := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	ChkErr(err)
 	req.Header.Add("X-Auth-Token", sb.Creds.Auth)
 	res, err := cl.Do(req)
+	// fmt.Printf("%v\n", fmt.Sprint(res.StatusCode))
 	ChkErr(err)
 	body, err = ioutil.ReadAll(res.Body)
+	// fmt.Printf("%v\n", fmt.Sprint(string(body)))
 	ChkErr(err)
 	return body
 }

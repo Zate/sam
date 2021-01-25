@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,36 +102,35 @@ func Tar(src string, writers ...io.Writer) error {
 // UnpackApp takes an appid string and finds the latest version of that app and unpacks 3 copies of it.
 func UnpackApp(a *App, t []string, f string) {
 	defer TimeTrack(time.Now())
-
 	tgz := FilePath + fmt.Sprint(a.UID) + "/" + a.Appid + "/" + a.LatestVersion + "/" + a.Appid + "_" + a.LatestVersion + ".tar.gz"
-
-	for _, s := range t {
-		target := FilePath + fmt.Sprint(a.UID) + "/" + s + "/"
-		err := os.MkdirAll(target, 0755)
-		if err != nil {
-			Logger().Fatalln(err)
-			os.Exit(1)
+	if f == "" {
+		for _, s := range t {
+			target := FilePath + fmt.Sprint(a.UID) + "/" + s + "/"
+			err := os.MkdirAll(target, 0755)
+			if err != nil {
+				Logger().Fatalln(err)
+				os.Exit(1)
+			}
+			r, err := os.Open(tgz)
+			if err != nil {
+				Logger().Fatalln(err)
+				os.Exit(1)
+			}
+			err = Untar(target, r)
+			if err != nil {
+				Logger().Fatalln(err)
+				os.Exit(1)
+			}
+			var p Package
+			p.DType = s
+			err = filepath.Walk(target, GetFiles(&p))
+			if err != nil {
+				Logger().Fatalln(err)
+				os.Exit(1)
+			}
+			a.Packages = append(a.Packages, p)
 		}
-		r, err := os.Open(tgz)
-		if err != nil {
-			Logger().Fatalln(err)
-			os.Exit(1)
-		}
-		err = Untar(target, r)
-		if err != nil {
-			Logger().Fatalln(err)
-			os.Exit(1)
-		}
-		var p Package
-		p.DType = s
-		err = filepath.Walk(target, GetFiles(&p))
-		if err != nil {
-			Logger().Fatalln(err)
-			os.Exit(1)
-		}
-		a.Packages = append(a.Packages, p)
-	}
-	if f != "" {
+	} else {
 		r, err := os.Open(tgz)
 		if err != nil {
 			Logger().Fatalln(err)
@@ -170,4 +170,23 @@ func GetFiles(p *Package) filepath.WalkFunc {
 		i++
 		return nil
 	}
+}
+
+// DLOnly function to download the package and unpack it to a specific location only.
+func (sb *SBase) DLOnly(p string, a *App) {
+	defer TimeTrack(time.Now())
+	url := "https://splunkbase.splunk.com/app/" + fmt.Sprint(a.UID) + "/release/" + a.LatestVersion + "/download/"
+	// fmt.Println(url)
+	cl := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	ChkErr(err)
+	req.Header.Add("X-Auth-Token", sb.Creds.Auth)
+	res, err := cl.Do(req)
+	ChkErr(err)
+	CheckDir(p)
+	err = Untar(p, res.Body)
+	ChkErr(err)
+	err = os.Rename(p+"/"+a.Appid, p+"/package")
+	ChkErr(err)
+	return
 }

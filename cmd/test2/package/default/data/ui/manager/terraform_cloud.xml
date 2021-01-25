@@ -1,0 +1,33 @@
+<endpoint name="data/inputs/terraform_cloud">
+  <header>Terraform Cloud for Splunk</header>
+  <breadcrumb>
+    <parent hidecurrent="False">datainputstats</parent>
+    <name>Terraform Cloud for Splunk</name>
+  </breadcrumb>
+  <elements>
+    <element name="sourceFields" type="fieldset">
+      <key name="legend">Terraform Cloud Setup</key>
+      <key name="helpText">To ingest data from Terraform Cloud, we need to configure this modular input using an organization token from Terraform Cloud.</key>
+      <view name="list"/>
+      <view name="edit"/>
+      <view name="create"/>
+      <elements>
+        <element name="name" label="Resource name">
+          <view name="edit"/>
+          <view name="list"/>
+          <view name="create"/>
+        </element>
+        <element name="api_url" type="hidden" label="API URL">
+          <view name="edit"/>
+          <view name="create"/>
+          <key name="exampleText">Terraform Cloud API URL</key>
+        </element>
+        <element name="organization_token" type="simplepassword" label="Token">
+          <view name="edit"/>
+          <view name="create"/>
+          <key name="exampleText">Your Terraform Cloud Organization Token.</key>
+        </element>
+      </elements>
+    </element>
+  </elements>
+  </endpoint>

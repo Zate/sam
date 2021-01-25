@@ -2,7 +2,6 @@ package sbase
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -13,12 +12,12 @@ import (
 func (sb *SBase) LoadManifest(m string) {
 	defer TimeTrack(time.Now())
 	if DoExist(m) == false {
-		f, err := os.Create(m)
-		ChkErr(err)
-		fmt.Sprint(f.Name())
+		if err := os.MkdirAll(m, 0755); err != nil {
+			ChkErr(err)
+		}
 	}
 	if DoExist(m+"/manifest.json") == false {
-		fmt.Sprint("t")
+		// fmt.Sprint("t")
 		f, err := os.OpenFile(m+"/manifest.json", os.O_RDONLY|os.O_CREATE, 0644)
 		ChkErr(err)
 		err = f.Close()
@@ -26,7 +25,7 @@ func (sb *SBase) LoadManifest(m string) {
 		sb.Manifest.updateNow()
 		return
 	}
-	f, err := ioutil.ReadFile(m)
+	f, err := ioutil.ReadFile(m + "/manifest.json")
 	ChkErr(err)
 	err = json.Unmarshal([]byte(f), &sb.Manifest)
 	ChkErr(err)

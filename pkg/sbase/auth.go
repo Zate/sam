@@ -40,6 +40,7 @@ func (sb *SBase) AuthToken() {
 	body, err := ioutil.ReadAll(res.Body)
 	ChkErr(err)
 	var auth Feed
+	//fmt.Printf("%v", string(body))
 	err = xml.Unmarshal(body, &auth)
 	ChkErr(err)
 	sb.Creds.Auth = auth.ID
