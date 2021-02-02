@@ -2,6 +2,7 @@ package sbase
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -22,8 +23,10 @@ func (sb *SBase) LoadManifest(m string) {
 		ChkErr(err)
 		err = f.Close()
 		ChkErr(err)
-		sb.Manifest.updateNow()
+		sb.UpdateNow(m)
 		return
+	} else {
+
 	}
 	f, err := ioutil.ReadFile(m + "/manifest.json")
 	ChkErr(err)
@@ -36,11 +39,30 @@ func (m *Manifest) setNow() {
 	m.Updated = time.Now()
 }
 
-func (m *Manifest) updateNow() {
-	m.Updated = time.Now()
-	mout, err := json.MarshalIndent(m, "", " ")
+// UpdateNow writes sb.Manifest out to file
+func (sb *SBase) UpdateNow(m string) {
+	sb.Manifest.Updated = time.Now()
+	mout, err := json.MarshalIndent(&sb.Manifest, "", " ")
 	ChkErr(err)
-	err = ioutil.WriteFile(FilePath+"/manifest.json", mout, 0644)
+	fmt.Print(m + "/manifest.json")
+	err = ioutil.WriteFile(m+"/manifest.json", mout, 0755)
 	ChkErr(err)
+	return
+}
+
+// CheckApps compares what is in manifest.json to what is on disk in FilePath
+func (sb *SBase) CheckApps(fp string) {
+	// Read app uid's from manifest.json
+
+	// Read app uid's from FilePath
+
+	// Validate appinfo.json against the struct and check if it's in the manifest.json uids
+
+	// If it's in the manifest but not on disk, download it.
+
+	// if its on disk but not in the manifest, and the appinfo.json is valid, check if we have the latest version.
+
+	// if not latest version, downloadlatest version
+
 	return
 }

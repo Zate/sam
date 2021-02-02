@@ -98,3 +98,28 @@ type=addon | app <-- kind of wish they would categorize alerts as their own type
 "public": true
 }
 ```
+```
+DEFAULT_URL = "https://apps.splunk.com/api/apps"
+LOGIN_URL   = "https://apps.splunk.com/api/account:login/"
+VETTED_APPS_URI = "/services/appsbrowser/v1/app/"
+VETTED_APP_INSTALL_METHOD = "simple"
+INSTANCE_TYPE_CLOUD = "cloud"
+
+HTTP_ACTION         = "action"
+HTTP_ACTION_INSTALL = "install"
+HTTP_ACTION_DOWNLOAD = "download"
+
+HTTP_GET_COUNT      = "count"
+HTTP_GET_OFFSET     = "offset"
+HTTP_GET_QUERY      = "q"
+HTTP_GET_SORTBY     = "sort_by"
+HTTP_GET_SORTDIR    = "sort_dir"
+
+HTTP_AUTH_TOKEN     = "auth"
+HTTP_AUTH_HEADER    = "X-Auth-Token"
+
+PRODUCT_TYPE_LITE   = "lite"
+
+# Gets sent to SplunkBase.
+GET_ARG_PRODTYPE    = "product"
+```

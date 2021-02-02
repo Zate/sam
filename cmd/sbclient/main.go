@@ -22,7 +22,7 @@ var (
 	appspath string
 	// appver      string
 	// catalogpath string
-	// catalog     bool
+	catalog    bool
 	dlpath     string
 	dlpathInfo os.FileInfo
 	s          = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
@@ -36,15 +36,15 @@ func init() {
 	// flag.StringVar(&catalogpath, "cp", sbase.FilePath+"catalog.json", "Path to catalog.json")
 	flag.StringVar(&dlpath, "p", "", "Path to extract the package")
 	// flag.StringVar(&appver, "v", "", "Specific Version string of the app to get")
-	// flag.BoolVar(&catalog, "c", false, "Update Catalog (Not Functioning)")
+	flag.BoolVar(&catalog, "c", false, "Update Catalog (Not Functioning)")
 	flag.BoolVar(&debug, "d", false, "Turn on Debug")
 	flag.BoolVar(&quiet, "q", false, "Silence All Output")
 	flag.BoolVar(&owrite, "o", false, "Overwite output path")
 	flag.Parse()
-	// if (appid == "" && catalog == false) || catalog == true {
-	// 	flag.PrintDefaults()
-	// 	os.Exit(1)
-	// }
+	if appid == "" || catalog == true {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 	if debug != false {
 		log.SetLevel(log.DebugLevel)
 	}
@@ -74,7 +74,7 @@ func init() {
 	} else {
 		sbase.FilePath = appspath
 		_ = sbase.CheckDir(appspath)
-		sb.LoadManifest(appspath)
+		//sb.LoadManifest(appspath)
 	}
 }
 
@@ -109,6 +109,17 @@ func main() {
 			break
 		}
 	}
+	//sb.Catalog[z.Appid] = &z
+	//var ma *map[string]string = new(map[string]string)
+	//sb.Manifest.Apps = ma
+	//ma[]
+	//ma[z.Appid] = fmt.Sprint(sb.Catalog[z.Appid].UID)
+	sb.Manifest.Apps = make(map[int]string)
+	sb.LoadManifest(appspath)
+	sb.Manifest.Apps[z.UID] = z.Appid
+	//fmt.Sprint(sb.Catalog[z.Appid].UID)
+	//fmt.Sprint(z.UID)
+
 	if debug == false && quiet == false {
 		s.Suffix = "  > Downloading " + appid
 	}
@@ -137,11 +148,12 @@ func main() {
 	sbase.ChkErr(err)
 	err = ioutil.WriteFile(path+z.Appid+"_"+z.LatestVersion+".tar.gz", tgz, 0644)
 	sbase.ChkErr(err)
-	svrTypes := []string{"idx", "fwd", "shc"}
+	svrTypes := []string{"cm", "ds", "shd"}
 	if debug == false && quiet == false {
-		s.Suffix = "  > Unpacking " + z.Appid + "Version: " + z.LatestVersion
+		s.Suffix = "  > Unpacking " + z.Appid + " Version: " + z.LatestVersion
 	}
 	sbase.UnpackApp(&z, svrTypes, dlpath)
+	sb.UpdateNow(sbase.FilePath)
 	if debug == false && quiet == false {
 		s.FinalMSG = "Download for " + fmt.Sprint(z.UID) + " - " + z.Title + " Version: " + z.LatestVersion + " is complete!\nFiles located at " + path + " \n\n"
 		s.Stop()

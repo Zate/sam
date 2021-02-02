@@ -11,7 +11,7 @@ import (
 type SBase struct {
 	Creds    *Creds
 	Manifest *Manifest
-	Catalog  []*App
+	Catalog  *map[string]*App //[]*App
 	Ctx      *context.Context
 }
 
@@ -113,6 +113,6 @@ type Feed struct {
 
 // Manifest is a struct representing a json file with a list of all the apps installed and managed
 type Manifest struct {
-	Apps    []App     `json:"apps"`
-	Updated time.Time `json:"updated"`
+	Apps    map[int]string `json:"apps"`
+	Updated time.Time      `json:"updated"`
 }

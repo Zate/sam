@@ -17,6 +17,7 @@ func Untar(dst string, r io.Reader) error {
 	defer TimeTrack(time.Now())
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
+		Logger().Error(err)
 		return err
 	}
 	defer gzr.Close()
@@ -27,24 +28,29 @@ func Untar(dst string, r io.Reader) error {
 		case err == io.EOF:
 			return nil
 		case err != nil:
+			Logger().Error(err)
 			return err
 		case header == nil:
 			continue
 		}
 		target := filepath.Join(dst, header.Name)
+		//fmt.Printf("File: %v Header: %v\n", target, header.Typeflag)
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, 0755); err != nil {
+					Logger().Error(err)
 					return err
 				}
 			}
 		case tar.TypeReg:
 			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
+				Logger().Error(err)
 				return err
 			}
 			if _, err := io.Copy(f, tr); err != nil {
+				Logger().Error(err)
 				return err
 			}
 			f.Close()
@@ -105,30 +111,30 @@ func UnpackApp(a *App, t []string, f string) {
 	tgz := FilePath + fmt.Sprint(a.UID) + "/" + a.Appid + "/" + a.LatestVersion + "/" + a.Appid + "_" + a.LatestVersion + ".tar.gz"
 	if f == "" {
 		for _, s := range t {
-			target := FilePath + fmt.Sprint(a.UID) + "/" + s + "/"
-			err := os.MkdirAll(target, 0755)
+			target := FilePath + fmt.Sprint(a.UID) + "/package/" //+ s + "/"
+			err := os.MkdirAll(target+a.Appid, 0755)
 			if err != nil {
-				Logger().Fatalln(err)
-				os.Exit(1)
+				ChkErr(err)
 			}
 			r, err := os.Open(tgz)
 			if err != nil {
-				Logger().Fatalln(err)
-				os.Exit(1)
+				ChkErr(err)
 			}
 			err = Untar(target, r)
 			if err != nil {
-				Logger().Fatalln(err)
-				os.Exit(1)
+				ChkErr(err)
 			}
 			var p Package
 			p.DType = s
 			err = filepath.Walk(target, GetFiles(&p))
 			if err != nil {
-				Logger().Fatalln(err)
-				os.Exit(1)
+				ChkErr(err)
 			}
 			a.Packages = append(a.Packages, p)
+			err = os.RemoveAll(target + s)
+			ChkErr(err)
+			err = os.Rename(target+a.Appid, target+s)
+			ChkErr(err)
 		}
 	} else {
 		r, err := os.Open(tgz)

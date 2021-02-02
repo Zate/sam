@@ -60,6 +60,9 @@ func (sb *SBase) GetApp(a string) (app App) {
 	b = GetURL(u)
 	err = json.Unmarshal(b, &app.Release)
 	ChkErr(err)
+	// sb.Catalog[app.Appid] = &app
+	// var app map[string]string
+	// sb.Manifest.Apps[app.Appid] = a
 	return app
 }
 
@@ -83,6 +86,7 @@ func (sb *SBase) DownloadApp(a *App) (body []byte) {
 	body, err = ioutil.ReadAll(res.Body)
 	// fmt.Printf("%v\n", fmt.Sprint(string(body)))
 	ChkErr(err)
+
 	return body
 }
 
